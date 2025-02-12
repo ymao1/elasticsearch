@@ -64,6 +64,7 @@ import org.elasticsearch.inference.SimilarityMeasure;
 import org.elasticsearch.search.fetch.StoredFieldsSpec;
 import org.elasticsearch.search.lookup.Source;
 import org.elasticsearch.search.vectors.KnnVectorQueryBuilder;
+import org.elasticsearch.search.vectors.VectorData;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
 import org.elasticsearch.xcontent.XContentLocation;
@@ -71,6 +72,7 @@ import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
 import org.elasticsearch.xcontent.XContentType;
 import org.elasticsearch.xpack.core.ml.inference.results.MlTextEmbeddingResults;
+import org.elasticsearch.xpack.core.ml.inference.results.TextEmbeddingVectorDataResults;
 import org.elasticsearch.xpack.core.ml.inference.results.TextExpansionResults;
 import org.elasticsearch.xpack.core.ml.search.SparseVectorQueryBuilder;
 import org.elasticsearch.xpack.inference.highlight.SemanticTextHighlighter;
@@ -701,20 +703,24 @@ public class SemanticTextFieldMapper extends FieldMapper implements InferenceFie
                         );
                     }
                     case TEXT_EMBEDDING -> {
-                        if (inferenceResults instanceof MlTextEmbeddingResults == false) {
+                        if (inferenceResults instanceof TextEmbeddingVectorDataResults == false) {
                             throw new IllegalArgumentException(
                                 generateQueryInferenceResultsTypeMismatchMessage(inferenceResults, MlTextEmbeddingResults.NAME)
                             );
                         }
 
-                        MlTextEmbeddingResults textEmbeddingResults = (MlTextEmbeddingResults) inferenceResults;
-                        float[] inference = textEmbeddingResults.getInferenceAsFloat();
-                        var inferenceLength = modelSettings.elementType() == DenseVectorFieldMapper.ElementType.BIT
-                            ? inference.length * Byte.SIZE
-                            : inference.length;
+                        TextEmbeddingVectorDataResults textEmbeddingResults = (TextEmbeddingVectorDataResults) inferenceResults;
+                        VectorData queryVector = textEmbeddingResults.getInferenceAsQueryVector();
+
+                        var inferenceLength = switch (modelSettings.elementType()) {
+                            case DenseVectorFieldMapper.ElementType.BIT -> queryVector.byteVectorSize(true);
+                            case DenseVectorFieldMapper.ElementType.BYTE -> queryVector.byteVectorSize(false);
+                            case DenseVectorFieldMapper.ElementType.FLOAT -> queryVector.floatVectorSize();
+                        };
+
                         if (inferenceLength != modelSettings.dimensions()) {
                             throw new IllegalArgumentException(
-                                generateDimensionCountMismatchMessage(inference.length, modelSettings.dimensions())
+                                generateDimensionCountMismatchMessage(inferenceLength, modelSettings.dimensions())
                             );
                         }
 
@@ -724,7 +730,7 @@ public class SemanticTextFieldMapper extends FieldMapper implements InferenceFie
                             k = Math.max(k, DEFAULT_SIZE);
                         }
 
-                        yield new KnnVectorQueryBuilder(inferenceResultsFieldName, inference, k, null, null, null);
+                        yield new KnnVectorQueryBuilder(inferenceResultsFieldName, queryVector, k, null, null, null);
                     }
                     default -> throw new IllegalStateException(
                         "Field ["

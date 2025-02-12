@@ -16,6 +16,7 @@ import org.elasticsearch.inference.InferenceResults;
 import org.elasticsearch.inference.InferenceServiceResults;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xpack.core.ml.inference.results.MlTextEmbeddingResults;
+import org.elasticsearch.xpack.core.ml.inference.results.TextEmbeddingVectorDataResults;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -73,7 +74,7 @@ public record InferenceTextEmbeddingByteResults(List<InferenceByteEmbedding> emb
     @Override
     public List<? extends InferenceResults> transformToCoordinationFormat() {
         return embeddings.stream()
-            .map(embedding -> new MlTextEmbeddingResults(TEXT_EMBEDDING_BYTES, embedding.toDoubleArray(), false))
+            .map(embedding -> new TextEmbeddingVectorDataResults(TEXT_EMBEDDING_BYTES, embedding.toVectorData(), false))
             .toList();
     }
 

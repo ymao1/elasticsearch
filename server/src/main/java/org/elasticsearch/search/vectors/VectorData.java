@@ -60,6 +60,10 @@ public record VectorData(float[] floatVector, byte[] byteVector) implements Writ
         return vec;
     }
 
+    public int byteVectorSize(Boolean asBits) {
+        return asBits ? this.asByteVector().length * Byte.SIZE : this.asByteVector().length;
+    }
+
     public float[] asFloatVector() {
         if (floatVector != null) {
             return floatVector;
@@ -69,6 +73,10 @@ public record VectorData(float[] floatVector, byte[] byteVector) implements Writ
             vec[i] = byteVector[i];
         }
         return vec;
+    }
+
+    public int floatVectorSize() {
+        return this.asFloatVector().length;
     }
 
     public void addToBuffer(ByteBuffer byteBuffer) {

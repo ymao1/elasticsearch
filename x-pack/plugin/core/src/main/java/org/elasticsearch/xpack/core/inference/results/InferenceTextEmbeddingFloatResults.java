@@ -19,10 +19,12 @@ import org.elasticsearch.inference.InferenceResults;
 import org.elasticsearch.inference.InferenceServiceResults;
 import org.elasticsearch.inference.TaskType;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.search.vectors.VectorData;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.core.ml.inference.results.MlTextEmbeddingResults;
+import org.elasticsearch.xpack.core.ml.inference.results.TextEmbeddingVectorDataResults;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -118,7 +120,7 @@ public record InferenceTextEmbeddingFloatResults(List<InferenceFloatEmbedding> e
 
     @Override
     public List<? extends InferenceResults> transformToCoordinationFormat() {
-        return embeddings.stream().map(embedding -> new MlTextEmbeddingResults(TEXT_EMBEDDING, embedding.asDoubleArray(), false)).toList();
+        return embeddings.stream().map(embedding -> new TextEmbeddingVectorDataResults(TEXT_EMBEDDING, embedding.toVectorData(), false)).toList();
     }
 
     @Override
@@ -206,6 +208,10 @@ public record InferenceTextEmbeddingFloatResults(List<InferenceFloatEmbedding> e
                 doubles[i] = values[i];
             }
             return doubles;
+        }
+
+        VectorData toVectorData() {
+            return VectorData.fromFloats(values);
         }
 
         @Override

@@ -13,6 +13,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.search.vectors.VectorData;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 
@@ -73,6 +74,10 @@ public record InferenceByteEmbedding(byte[] values) implements Writeable, ToXCon
             doubleArray[i] = ((Byte) values[i]).doubleValue();
         }
         return doubleArray;
+    }
+
+    VectorData toVectorData() {
+        return VectorData.fromBytes(values);
     }
 
     @Override
